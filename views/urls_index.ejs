@@ -24,10 +24,11 @@
         </tr>
       </thead>
       <tbody>
+        <% if(user) { %>
         <% for(let url in urls) { %>
           <tr>
             <td><%= url %></td>
-            <td><%= urls[url] %></td>
+            <td><%= urls[url].longURL %></td>
             <td><form method="GET" action="/urls/<%= url %>">
               <button style="font-size:24px; color:red">&#x270D;</button>
             </form></td>
@@ -36,6 +37,11 @@
             </form></td>
           </tr>
         <% } %>
+        <% } else {%>
+        <h2>Please login first!</h2>
+        <% } %>
+
+        
       </tbody>
     </table>
   </main>
