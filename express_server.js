@@ -2,13 +2,16 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const bcrypt = require('bcrypt');
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1']
+}));
 
 const urlDatabase = {
   "b2xVn2": {longURL: "http://www.lighthouselabs.ca"},
@@ -75,7 +78,8 @@ app.post("/login", (req, res) => {
     console.log(users);
     const personId = authenticateUser(req.body.password);
     if (personId) {
-      res.cookie("user_id", personId);
+      // res.cookie("user_id", personId);
+      res.session.user_id = personId;
       res.redirect("/urls");
     } else {
       res.send("invalid credentials");
@@ -110,25 +114,28 @@ app.post("/register",(req, res) => {
     password: bcrypt.hashSync(req.body.password, 10)
   };
 
-  res.cookie("user_id", randomId);
+  // res.cookie("user_id", randomId);
+
+  req.session.user_id = randomId;
+  
   res.redirect("/urls");
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlsForUser(req.cookies.user_id), user: users[req.cookies.user_id] };
+  const templateVars = { urls: urlsForUser(req.session.user_id), user: users[req.session.user_id] };
   res.render("urls_index", templateVars);
 });
 
 app.post("/urls", (req, res) => {
   const key = generateRandomString();
-  urlDatabase[key] = {longURL: req.body.longURL, userID: req.cookies.user_id};
+  urlDatabase[key] = {longURL: req.body.longURL, userID: req.session.user_id};
 
   res.redirect("/urls");
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const key = req.params.shortURL;
-  if (req.cookies.user_id === urlDatabase[key].userID) {
+  if (req.session.user_id === urlDatabase[key].userID) {
     delete urlDatabase[req.params.shortURL];
     return res.redirect("/urls");
   }
@@ -137,9 +144,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:shortURL", (req, res) => {
   const key = req.params.shortURL;
-  if (req.cookies.user_id === urlDatabase[key].userID) {
+  if (req.session.user_id === urlDatabase[key].userID) {
 
-    urlDatabase[key] = {longURL: req.body.longURL, userID: req.cookies.user_id};
+    urlDatabase[key] = {longURL: req.body.longURL, userID: req.session.user_id};
 
     console.log(urlDatabase);
     return res.redirect("/urls");
@@ -158,15 +165,15 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  if (!req.cookies.user_id) {
+  if (!req.session.user_id) {
     res.redirect("/login");
   }
-  const templateVars = {user: users[req.cookies.user_id]};
+  const templateVars = {user: users[req.session.user_id]};
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id]};
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id]};
   res.render("urls_show", templateVars);
 });
 
