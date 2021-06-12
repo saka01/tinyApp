@@ -3,6 +3,7 @@ const app = express();
 const bodyParser = require("body-parser");
 const bcrypt = require('bcrypt');
 const cookieSession = require("cookie-session");
+const {findUser, authenticateUser, urlsForUser, generateRandomString } = require("./helpers");
 
 const PORT = 8080; // default port 8080
 
@@ -31,38 +32,7 @@ const users = {
   }
 };
 
-const findUser = (email) => {
-  for (const key in users) {
-    if (users[key].email === email) {
-      return true;
-    }
-  }
-  return false;
-};
 
-const authenticateUser = (password) => {
-  for (const key in users) {
-    if (bcrypt.compareSync(password, users[key].password)) {
-      return key;
-    }
-  }
-  return false;
-};
-
-const urlsForUser = (id) => {
-  const allUrls = {};
-
-  for (const url in urlDatabase) {
-    if (id === urlDatabase[url].userID) {
-      allUrls[url] = {longURL: urlDatabase[url].longURL};
-    }
-  }
-  return allUrls;
-};
-
-function generateRandomString() {
-  return Math.random().toString(36).substr(2,6);
-}
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -74,12 +44,11 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
 
-  if (findUser(req.body.email)) {
-    console.log(users);
-    const personId = authenticateUser(req.body.password);
+  if (findUser(req.body.email, users)) {
+    const personId = authenticateUser(req.body.password, users);
     if (personId) {
       // res.cookie("user_id", personId);
-      res.session.user_id = personId;
+      req.session.user_id = personId;
       res.redirect("/urls");
     } else {
       res.send("invalid credentials");
@@ -94,7 +63,7 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/urls");
 });
 
@@ -103,7 +72,7 @@ app.post("/register",(req, res) => {
   if (req.body.email === "" || req.body.password === "") {
     return res.send("put something in the fields");
   }
-  if (findUser(req.body.email)) {
+  if (findUser(req.body.email, users)) {
     return res.send("User already exists");
   }
   const randomId = generateRandomString();
@@ -114,15 +83,13 @@ app.post("/register",(req, res) => {
     password: bcrypt.hashSync(req.body.password, 10)
   };
 
-  // res.cookie("user_id", randomId);
-
   req.session.user_id = randomId;
   
   res.redirect("/urls");
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlsForUser(req.session.user_id), user: users[req.session.user_id] };
+  const templateVars = { urls: urlsForUser(req.session.user_id,urlDatabase), user: users[req.session.user_id] };
   res.render("urls_index", templateVars);
 });
 
@@ -145,22 +112,25 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   const key = req.params.shortURL;
   if (req.session.user_id === urlDatabase[key].userID) {
-
     urlDatabase[key] = {longURL: req.body.longURL, userID: req.session.user_id};
 
-    console.log(urlDatabase);
     return res.redirect("/urls");
   }
-  res.send("boy, get yo scamming ass on boy");
+  res.send("This is not your link");
 
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL].longURL;
 
-  if (!longURL) {
-    res.render("urls_new");
+  const userr = urlDatabase[req.params.shortURL];
+
+  if (userr === undefined) {
+    return res.send("Invalid Link");
   }
+
+  const longURL = userr.longURL;
+
+ 
   res.redirect(longURL);
 });
 
@@ -173,8 +143,13 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id]};
-  res.render("urls_show", templateVars);
+  const key = req.params.shortURL;
+
+  if (req.session.user_id === urlDatabase[key].userID) {
+    const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id]};
+    return res.render("urls_show", templateVars);
+  }
+  res.send("This is not your link.");
 });
 
 app.listen(PORT, () => {
