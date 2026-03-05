@@ -10,8 +10,10 @@ const SRC = path.join(__dirname, '..', 'node_modules', '@vladmandic', 'face-api'
 const DEST = path.join(__dirname, '..', 'models');
 
 const FILES = [
-  'ssd_mobilenetv1_model-weights_manifest.json',
-  'ssd_mobilenetv1_model.bin',
+  // Tiny face detector (replaces SSD MobileNet v1 — ~4× faster)
+  'tiny_face_detector_model-weights_manifest.json',
+  'tiny_face_detector_model.bin',
+  // Shared by all detection pipelines
   'face_landmark_68_model-weights_manifest.json',
   'face_landmark_68_model.bin',
   'face_recognition_model-weights_manifest.json',
