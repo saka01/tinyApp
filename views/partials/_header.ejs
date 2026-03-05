@@ -1,31 +1,8 @@
-<header>
-  <nav class="navbar navbar-expand-md navbar-dark bg-success">
-    <a class="navbar-brand" href="/urls">TinyApp</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-      <div class="navbar-nav">
-        <a class="nav-item nav-link" href="/urls">My URLs</a>
-        <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-      </div>
-    </div>
-    <% if (!user) {%>
-      <form action="/login" method="GET">
-        <input type="submit" value="Login" />
-    </form>      
-      |
-    <form action="/register" method="GET">
-      <input type="submit" value="Registeration" />
-  </form>
-  
-      <% } else {%>
-          <h6>Logged in as: <%= user.email %></h6>  
-          <form action="/logout" method="POST">
-            <input type="submit" value="Logout">
-          </form>
-      <% } %>
-
-   
-  </nav>
-</header>
+<nav class="navbar navbar-expand-lg navbar-dark" style="background:#1a1a2e;">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/">
+      <span style="color:#e94560;">&#9752;</span> FaceGala
+    </a>
+    <span class="navbar-text text-white-50 small d-none d-md-inline">Find yourself in every shot</span>
+  </div>
+</nav>
